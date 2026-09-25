@@ -441,7 +441,7 @@ async function startRecord() {
     stopAll();
   };
   try { recog.start(); } catch (e) {}
-  safety = setTimeout(stopAll, 6000);
+  safety = setTimeout(stopAll, 8000);
 }
 
 function resetRecordBtn() {
@@ -465,37 +465,57 @@ function endClass(word) {
 }
 function tokens(t) { return t.toLowerCase().replace(/[^a-z' ]/g, " ").split(/\s+/).filter(Boolean); }
 
+function lev(a, b) {
+  const d = Array.from({ length: a.length + 1 }, (_, i) => [i]);
+  for (let j = 1; j <= b.length; j++) d[0][j] = j;
+  for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++)
+    d[i][j] = Math.min(d[i-1][j] + 1, d[i][j-1] + 1, d[i-1][j-1] + (a[i-1] === b[j-1] ? 0 : 1));
+  return d[a.length][b.length];
+}
+
+// Chấm điểm kiểu khích lệ: dễ được điểm cao, không bao giờ dưới 5
 function grade(w, alts) {
-  const target = w.text, ok = [target, ...(SAME_SOUND[target] || [])];
+  const target = w.text, ok = [target, target + "s", target + "es", ...(SAME_SOUND[target] || [])];
   const key = w.sound.key, ipa = w.sound.ipa;
+  const allToks = alts.flatMap(a => tokens(a.t));
+
+  // 1) Máy nghe đúng từ (ở kết quả nào cũng được)
   for (let i = 0; i < alts.length; i++) {
     if (tokens(alts[i].t).some(tk => ok.includes(tk))) {
       if (i === 0) {
         const c = alts[i].c > 0 ? alts[i].c : 0.85;
-        const s = c >= 0.85 ? 10 : c >= 0.7 ? 9 : c >= 0.5 ? 8 : 7;
-        return { s, msg: s >= 9 ? `Tuyệt vời! Bé đọc đúng và rõ âm cuối ${ipa}.` : `Đúng rồi! Đọc âm cuối ${ipa} rõ hơn chút nữa là 10 điểm.` };
+        const s = c >= 0.6 ? 10 : 9;
+        return { s, msg: s === 10 ? `Tuyệt vời! Bé đọc đúng và rõ âm cuối ${ipa} 🎉` : `Rất giỏi! Bé đọc đúng rồi 👏` };
       }
-      return { s: 6, msg: `Gần đúng! Máy còn phân vân, bé đọc rõ âm cuối ${ipa} hơn nhé.` };
+      return { s: 9, msg: `Rất giỏi! Bé đọc đúng rồi, đọc to thêm chút nữa là 10 điểm 👏` };
     }
   }
-  const heardToks = alts[0] ? tokens(alts[0].t) : [];
+
+  // 2) Gần đúng và âm cuối đúng (vd "cop" thay cho "cup")
+  const tol = target.length >= 6 ? 2 : 1;
+  if (allToks.some(tk => lev(tk, target) <= tol && endClass(tk) === key))
+    return { s: 8, msg: `Giỏi lắm! Âm cuối ${ipa} đúng rồi, bé đọc lại lần nữa cho thật rõ nhé 💪` };
+
+  // Tìm từ nghe gần giống
   const norm = s => s.replace(/^c(?=[aou])/, "k");
   const stem = norm(w.stem.toLowerCase());
   const head = stem.slice(0, Math.max(2, stem.length - 1));
-  const near = heardToks.find(tk => norm(tk).startsWith(head)) || heardToks.find(tk => norm(tk).startsWith(stem.slice(0, 2)))
-    || heardToks.find(tk => norm(tk)[0] === stem[0] && tk.length <= target.length + 1);
+  const near = allToks.find(tk => lev(tk, target) <= 2) || allToks.find(tk => norm(tk).startsWith(head))
+    || allToks.find(tk => norm(tk).startsWith(stem.slice(0, 2)));
   if (near) {
     const hc = endClass(near);
+    if (hc === key) return { s: 8, msg: `Giỏi lắm! Âm cuối ${ipa} đúng rồi 💪` };
     if (hc && hc === PARTNER[key]) {
       const other = "/" + hc + "/";
-      return { s: 4, msg: w.sound.voiced
-        ? `Bé đang đọc thành ${other}. Âm ${ipa} phải rung cổ nhé!`
-        : `Bé đang đọc thành ${other}. Âm ${ipa} không rung cổ, chỉ bật hơi nhẹ.` };
+      return { s: 7, msg: w.sound.voiced
+        ? `Khá lắm! Máy nghe hơi giống ${other}. Âm ${ipa} thì cổ rung nhé, thử lại nào!`
+        : `Khá lắm! Máy nghe hơi giống ${other}. Âm ${ipa} chỉ bật hơi nhẹ, cổ không rung, thử lại nào!` };
     }
-    if (!hc) return { s: 3, msg: `Bé quên đọc âm cuối ${ipa} rồi. Nghe mẫu và đọc lại nhé!` };
-    return { s: 4, msg: `Âm cuối chưa đúng. Từ này kết thúc bằng âm ${ipa}.` };
+    return { s: 6, msg: `Gần được rồi! Bé nhớ đọc rõ âm cuối ${ipa} ở phần gạch chân nhé 😊` };
   }
-  return { s: 2, msg: "Chưa đúng. Bé nghe mẫu thật kỹ rồi đọc lại nhé!" };
+
+  // 3) Máy nghe ra từ khác: vẫn khen vì bé đã cố gắng
+  return { s: 5, msg: "Bé đã cố gắng rồi! Bấm 🔊 nghe mẫu rồi đọc lại to và chậm nhé 🌟" };
 }
 
 function showScore(r, heard) {
