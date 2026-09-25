@@ -70,6 +70,10 @@
   .ipa { font-family: var(--display); font-weight: 800; font-size: 48px; line-height: 1; }
   .voiceless .ipa { color: var(--orange); }
   .voiced .ipa { color: var(--green); }
+  .purple .sound { background: #f1e9ff; }
+  .purple .ipa { color: #8a4fd6; }
+  .purple .word u { color: #8a4fd6; border-bottom-color: #8a4fd6; }
+  .d-word.purple u { color: #8a4fd6; border-bottom-color: #8a4fd6; }
   .tip { font-size: 13px; color: var(--muted); line-height: 1.35; }
   .throat { font-size: 13px; background: var(--card); border-radius: 999px; padding: 3px 10px; }
 
@@ -188,7 +192,7 @@
   <div class="legend">
     <span><b>🔊</b> nghe mẫu</span>
     <span><b>🎤</b> bé đọc và chấm điểm</span>
-    <span><b>✋</b> đặt tay lên cổ: <b>không rung</b> là /p/ /t/ /k/, <b>có rung</b> là /b/ /d/ /g/</span>
+    <span><b>✋</b> đặt tay lên cổ: các âm trong bài đều <b>không rung</b>, chỉ bật hơi hoặc xì hơi</span>
   </div>
 
   <main id="pairs"></main>
@@ -219,32 +223,31 @@
 <script>
 // [emoji, stem, underlined ending, silent letters, Vietnamese meaning]
 const DATA = [
- { title: "Cặp 1: /p/ – /b/", sounds: [
+ { title: "Trang 1: /p/ và /t/", sounds: [
    { ipa: "/p/", key: "p", voiced: false, tip: "Mím 2 môi rồi bật hơi “p”", throat: "Cổ <b>không rung</b>", endings: [
      { end: "-p", note: "", words: [["☕","cu","p","","cái cốc"],["🗺️","ma","p","","bản đồ"],["🐑","shee","p","","con cừu"],["🚢","shi","p","","con tàu"],["🧼","soa","p","","xà phòng"]] },
      { end: "-pe", note: "chữ <b>e</b> câm", words: [["🍇","gra","p","e","quả nho"],["🪢","ro","p","e","sợi dây"],["🦍","a","p","e","con vượn"],["✉️","envelo","p","e","phong bì"],["🔭","telesco","p","e","kính thiên văn"]] } ] },
-   { ipa: "/b/", key: "b", voiced: true, tip: "Mím 2 môi rồi bật “b”", throat: "Cổ <b>có rung</b>", endings: [
-     { end: "-b", note: "", words: [["🦀","cra","b","","con cua"],["🕸️","we","b","","mạng nhện"],["🛁","tu","b","","bồn tắm"],["🚕","ca","b","","xe taxi"],["💡","bul","b","","bóng đèn"]] },
-     { end: "-be", note: "chữ <b>e</b> câm", words: [["🧊","cu","b","e","khối vuông"],["🌍","glo","b","e","quả địa cầu"],["🧪","tu","b","e","ống nghiệm"],["👘","ro","b","e","áo choàng"],["🦠","micro","b","e","vi khuẩn"]] } ] }
- ]},
- { title: "Cặp 2: /t/ – /d/", sounds: [
    { ipa: "/t/", key: "t", voiced: false, tip: "Chạm lưỡi sau răng trên, bật hơi “t”", throat: "Cổ <b>không rung</b>", endings: [
      { end: "-t", note: "", words: [["🐱","ca","t","","con mèo"],["🎩","ha","t","","cái mũ"],["🐰","rabbi","t","","con thỏ"],["🥕","carro","t","","cà rốt"],["🤖","robo","t","","rô-bốt"]] },
-     { end: "-te", note: "chữ <b>e</b> câm", words: [["🪁","ki","t","e","con diều"],["🍽️","pla","t","e","cái đĩa"],["⛸️","ska","t","e","giày trượt"],["🍫","chocola","t","e","sô-cô-la"],["🎵","no","t","e","nốt nhạc"]] } ] },
-   { ipa: "/d/", key: "d", voiced: true, tip: "Chạm lưỡi sau răng trên, bật “d”", throat: "Cổ <b>có rung</b>", endings: [
-     { end: "-d", note: "", words: [["🛏️","be","d","","cái giường"],["🐦","bir","d","","con chim"],["🔴","re","d","","màu đỏ"],["🍞","brea","d","","bánh mì"],["✋","han","d","","bàn tay"]] },
-     { end: "-de", note: "chữ <b>e</b> câm", words: [["🛝","sli","d","e","cầu trượt"],["🎢","ri","d","e","đi, cưỡi (xe)"],["🙈","hi","d","e","trốn"],["👰","bri","d","e","cô dâu"],["🍋","lemona","d","e","nước chanh"]] } ] }
+     { end: "-te", note: "chữ <b>e</b> câm", words: [["🪁","ki","t","e","con diều"],["🍽️","pla","t","e","cái đĩa"],["⛸️","ska","t","e","giày trượt"],["🍫","chocola","t","e","sô-cô-la"],["🎵","no","t","e","nốt nhạc"]] } ] }
  ]},
- { title: "Cặp 3: /k/ – /g/", sounds: [
+ { title: "Trang 2: /k/", sounds: [
    { ipa: "/k/", key: "k", voiced: false, tip: "Cuống lưỡi chạm vòm họng, bật hơi “k”", throat: "Cổ <b>không rung</b>", endings: [
      { end: "-k", note: "", words: [["📖","boo","k","","quyển sách"],["🥛","mil","k","","sữa"],["🍴","for","k","","cái dĩa"],["🦈","shar","k","","cá mập"],["🥤","drin","k","","đồ uống"]] },
      { end: "-ck", note: "c + k đọc chung là /k/", words: [["🦆","du","ck","","con vịt"],["🧦","so","ck","","chiếc tất"],["⏰","clo","ck","","đồng hồ"],["🚚","tru","ck","","xe tải"],["🪨","ro","ck","","hòn đá"]] },
-     { end: "-ke", note: "chữ <b>e</b> câm", words: [["🎂","ca","k","e","bánh ngọt"],["🚲","bi","k","e","xe đạp"],["🐍","sna","k","e","con rắn"],["🏞️","la","k","e","hồ nước"],["😂","jo","k","e","trò đùa"]] } ] },
-   { ipa: "/g/", key: "g", voiced: true, tip: "Cuống lưỡi chạm vòm họng, bật “g”", throat: "Cổ <b>có rung</b>", endings: [
-     { end: "-g", note: "", words: [["🐶","do","g","","con chó"],["🐷","pi","g","","con lợn"],["🐸","fro","g","","con ếch"],["🐛","bu","g","","con bọ"],["👜","ba","g","","cái túi"]] } ] }
+     { end: "-ke", note: "chữ <b>e</b> câm", words: [["🎂","ca","k","e","bánh ngọt"],["🚲","bi","k","e","xe đạp"],["🐍","sna","k","e","con rắn"],["🏞️","la","k","e","hồ nước"],["😂","jo","k","e","trò đùa"]] } ] }
+ ]},
+ { title: "Trang 3: /s/ và /sh/", sounds: [
+   { ipa: "/s/", key: "s", voiced: false, tip: "Răng khép lại, xì hơi “sss” như con rắn", throat: "Cổ <b>không rung</b>", endings: [
+     { end: "-s", note: "", words: [["🚌","bu","s","","xe buýt"],["✅","ye","s","","vâng, đúng"],["⛽","ga","s","","xăng"],["🐙","octopu","s","","bạch tuộc"],["🌵","cactu","s","","cây xương rồng"]] },
+     { end: "-ss", note: "2 chữ s đọc là 1 âm /s/", words: [["👗","dre","ss","","váy"],["🌱","gra","ss","","cỏ"],["♟️","che","ss","","cờ vua"],["😘","ki","ss","","nụ hôn"],["🏫","cla","ss","","lớp học"]] },
+     { end: "-ce", note: "c + e câm đọc là /s/", words: [["🧊","i","c","e","nước đá"],["🍚","ri","c","e","cơm"],["🙂","fa","c","e","khuôn mặt"],["🧃","jui","c","e","nước ép"],["🍕","sli","c","e","miếng bánh"]] },
+     { end: "-se", note: "chữ <b>e</b> câm", words: [["🏠","hou","s","e","ngôi nhà"],["🐁","mou","s","e","con chuột"],["🐴","hor","s","e","con ngựa"],["👩‍⚕️","nur","s","e","y tá"],["👛","pur","s","e","cái ví"]] } ] },
+   { ipa: "/sh/", key: "sh", voiced: false, color: "purple", tip: "Chu môi tròn, đẩy hơi “shhh” như khi bảo im lặng", throat: "Cổ <b>không rung</b>", endings: [
+     { end: "-sh", note: "s + h đọc chung là /sh/", words: [["🐟","fi","sh","","con cá"],["🥣","di","sh","","cái bát, món ăn"],["🪥","bru","sh","","bàn chải"],["🫧","wa","sh","","rửa, giặt"],["💦","spla","sh","","té nước"]] } ] }
  ]}
 ];
-const PARTNER = { p: "b", b: "p", t: "d", d: "t", k: "g", g: "k" };
+const PARTNER = { p: "b", b: "p", t: "d", d: "t", k: "g", g: "k", s: "sh", sh: "s" };
 const SAME_SOUND = { red: ["read"] };
 
 // Flatten words for navigation
@@ -279,7 +282,7 @@ DATA.forEach((pair, pi) => {
     <div class="pair-head"><h2>${pair.title}</h2><span class="progress" data-progress="${pi}"></span></div>
     <div class="board"><div class="board-head"><div>Âm</div><div class="right"><div>Đuôi từ</div><div>Ví dụ</div></div></div>`;
   pair.sounds.forEach(s => {
-    html += `<div class="sound-block ${s.voiced ? "voiced" : "voiceless"}">
+    html += `<div class="sound-block ${s.voiced ? "voiced" : "voiceless"} ${s.color || ""}">
       <div class="sound"><div class="ipa">${s.ipa}</div><div class="tip">${s.tip}</div><div class="throat">✋ ${s.throat}</div></div><div>`;
     s.endings.forEach(e => {
       html += `<div class="end-row"><div class="ending"><span class="tag">${e.end}</span>${e.note ? `<div class="note">${e.note}</div>` : ""}</div><div class="words">`;
@@ -353,7 +356,7 @@ function openDialog(idx, autoRecord) {
   $("dSound").textContent = `Âm cuối ${w.sound.ipa} · đuôi ${w.ending.end}`;
   $("dPic").textContent = w.emoji;
   $("dWord").innerHTML = wordHTML(w);
-  $("dWord").className = "d-word" + (w.sound.voiced ? " voiced" : "");
+  $("dWord").className = "d-word" + (w.sound.voiced ? " voiced" : "") + (w.sound.color ? " " + w.sound.color : "");
   $("dMeaning").textContent = w.vi;
   $("dResult").innerHTML = best[w.text] != null
     ? `<div class="msg">Điểm cao nhất của bé: ${best[w.text]}/10. Đọc lại để cao hơn nhé!</div>`
@@ -460,6 +463,8 @@ function stopAll() {
 // Last consonant sound of a spelled word (rough, by spelling)
 function endClass(word) {
   let x = word.toLowerCase().replace(/[^a-z]/g, "");
+  if (/sh$/.test(x)) return "sh";
+  if (/(ss|ce|se|s)$/.test(x)) return "s";
   if (/[^aeiou]e$/.test(x)) x = x.slice(0, -1);
   if (/ck$/.test(x)) return "k";
   const c = x.slice(-1);
@@ -478,7 +483,8 @@ function lev(a, b) {
 // Chấm điểm CHỈ dựa vào ÂM CUỐI của từ máy nghe được (không xét phần đầu từ)
 function grade(w, alts) {
   const key = w.sound.key, ipa = w.sound.ipa;
-  const endsOf = a => tokens(a.t).map(endClass);
+  // Nếu máy nghe thành số nhiều (vd "cups"), bỏ chữ s cuối để xét âm trước đó
+  const endsOf = a => tokens(a.t).flatMap(tk => (key !== "s" && key !== "sh" && /[^s]s$/.test(tk)) ? [endClass(tk), endClass(tk.slice(0, -1))] : [endClass(tk)]);
   const first = alts[0] ? endsOf(alts[0]) : [];
   const any = alts.flatMap(endsOf);
   if (!alts.some(a => tokens(a.t).length)) return null; // không nghe được gì
