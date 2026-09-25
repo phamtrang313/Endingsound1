@@ -423,7 +423,9 @@ async function startRecord() {
   recog.onresult = ev => {
     gotResult = true;
     const alts = Array.from(ev.results[0]).map(a => ({ t: a.transcript, c: a.confidence }));
-    showScore(grade(w, alts), alts[0] ? alts[0].t : "");
+    const r = grade(w, alts);
+    if (r) showScore(r, alts[0] ? alts[0].t : "");
+    else $("dResult").innerHTML = `<div class="msg">Máy chưa nghe rõ.</div><div class="heard">Bé đọc to và gần micro hơn một chút nhé.</div>`;
   };
   recog.onerror = ev => {
     if (ev.error === "not-allowed" || ev.error === "service-not-allowed") {
@@ -473,49 +475,27 @@ function lev(a, b) {
   return d[a.length][b.length];
 }
 
-// Chấm điểm kiểu khích lệ: dễ được điểm cao, không bao giờ dưới 5
+// Chấm điểm CHỈ dựa vào ÂM CUỐI của từ máy nghe được (không xét phần đầu từ)
 function grade(w, alts) {
-  const target = w.text, ok = [target, target + "s", target + "es", ...(SAME_SOUND[target] || [])];
   const key = w.sound.key, ipa = w.sound.ipa;
-  const allToks = alts.flatMap(a => tokens(a.t));
+  const endsOf = a => tokens(a.t).map(endClass);
+  const first = alts[0] ? endsOf(alts[0]) : [];
+  const any = alts.flatMap(endsOf);
+  if (!alts.some(a => tokens(a.t).length)) return null; // không nghe được gì
 
-  // 1) Máy nghe đúng từ (ở kết quả nào cũng được)
-  for (let i = 0; i < alts.length; i++) {
-    if (tokens(alts[i].t).some(tk => ok.includes(tk))) {
-      if (i === 0) {
-        const c = alts[i].c > 0 ? alts[i].c : 0.85;
-        const s = c >= 0.6 ? 10 : 9;
-        return { s, msg: s === 10 ? `Tuyệt vời! Bé đọc đúng và rõ âm cuối ${ipa} 🎉` : `Rất giỏi! Bé đọc đúng rồi 👏` };
-      }
-      return { s: 9, msg: `Rất giỏi! Bé đọc đúng rồi, đọc to thêm chút nữa là 10 điểm 👏` };
-    }
+  if (first.includes(key))
+    return { s: 10, msg: `Tuyệt vời! Âm cuối ${ipa} rất chuẩn 🎉`, note: `✓ Âm cuối ${ipa}` };
+  if (any.includes(key))
+    return { s: 9, msg: `Rất giỏi! Âm cuối ${ipa} đúng rồi 👏`, note: `✓ Âm cuối ${ipa}` };
+  const partner = PARTNER[key];
+  if (any.includes(partner)) {
+    const other = "/" + partner + "/";
+    return { s: 7, note: `Máy nghe âm cuối giống ${other}`, msg: w.sound.voiced
+      ? `Khá lắm! Âm cuối nghe hơi giống ${other}. Âm ${ipa} thì cổ rung nhé, thử lại nào!`
+      : `Khá lắm! Âm cuối nghe hơi giống ${other}. Âm ${ipa} chỉ bật hơi nhẹ, cổ không rung, thử lại nào!` };
   }
-
-  // 2) Gần đúng và âm cuối đúng (vd "cop" thay cho "cup")
-  const tol = target.length >= 6 ? 2 : 1;
-  if (allToks.some(tk => lev(tk, target) <= tol && endClass(tk) === key))
-    return { s: 8, msg: `Giỏi lắm! Âm cuối ${ipa} đúng rồi, bé đọc lại lần nữa cho thật rõ nhé 💪` };
-
-  // Tìm từ nghe gần giống
-  const norm = s => s.replace(/^c(?=[aou])/, "k");
-  const stem = norm(w.stem.toLowerCase());
-  const head = stem.slice(0, Math.max(2, stem.length - 1));
-  const near = allToks.find(tk => lev(tk, target) <= 2) || allToks.find(tk => norm(tk).startsWith(head))
-    || allToks.find(tk => norm(tk).startsWith(stem.slice(0, 2)));
-  if (near) {
-    const hc = endClass(near);
-    if (hc === key) return { s: 8, msg: `Giỏi lắm! Âm cuối ${ipa} đúng rồi 💪` };
-    if (hc && hc === PARTNER[key]) {
-      const other = "/" + hc + "/";
-      return { s: 7, msg: w.sound.voiced
-        ? `Khá lắm! Máy nghe hơi giống ${other}. Âm ${ipa} thì cổ rung nhé, thử lại nào!`
-        : `Khá lắm! Máy nghe hơi giống ${other}. Âm ${ipa} chỉ bật hơi nhẹ, cổ không rung, thử lại nào!` };
-    }
-    return { s: 6, msg: `Gần được rồi! Bé nhớ đọc rõ âm cuối ${ipa} ở phần gạch chân nhé 😊` };
-  }
-
-  // 3) Máy nghe ra từ khác: vẫn khen vì bé đã cố gắng
-  return { s: 5, msg: "Bé đã cố gắng rồi! Bấm 🔊 nghe mẫu rồi đọc lại to và chậm nhé 🌟" };
+  return { s: 6, note: `Máy chưa nghe rõ âm cuối ${ipa}`,
+    msg: `Bé đã cố gắng rồi! Nhớ đọc rõ âm cuối ${ipa} ở phần gạch chân nhé 🌟` };
 }
 
 function showScore(r, heard) {
@@ -524,7 +504,7 @@ function showScore(r, heard) {
   const stars = "⭐".repeat(Math.round(r.s / 2)) || "💪";
   $("dResult").innerHTML = `<div class="score ${level(r.s)}">${r.s}<small>/10</small></div>
     <div class="stars">${stars}</div><div class="msg">${r.msg}</div>
-    <div class="heard">Máy nghe thấy: “${heard.replace(/[<>&]/g, "")}”</div>`;
+    <div class="heard">Máy nghe thấy: “${heard.replace(/[<>&]/g, "")}”${r.note ? ` · ${r.note}` : ""}</div>`;
 }
 
 // ---------- PDF ----------
